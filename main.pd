@@ -1,4 +1,4 @@
-#N canvas 417 175 450 513 10;
+#N canvas 542 156 450 513 10;
 #X obj 24 29 netreceive 7070;
 #X obj 24 99 route 1 2 3 4;
 #X obj 182 450 dac~;
@@ -7,12 +7,14 @@
 #X obj 263 323 dbtorms;
 #X obj 372 88 vsl 15 128 0 110 0 1 empty empty empty 0 -9 0 10 -262144
 -1 -1 10391 1;
-#X floatatom 372 225 5 0 0 0 - - -;
+#X floatatom 372 225 5 0 0 0 - - -, f 5;
 #X obj 61 271 rev3~ 100 80 3000 10;
 #X obj 24 128 instruments/sine-clip;
 #X obj 60 159 instruments/pulse-train;
 #X obj 89 186 instruments/classic-synth;
 #X obj 116 212 instruments/phase-mod;
+#X obj 186 36 loadbang;
+#X msg 186 58 \; pd dsp 1;
 #X connect 0 0 1 0;
 #X connect 1 0 9 0;
 #X connect 1 1 10 0;
@@ -32,3 +34,4 @@
 #X connect 10 0 8 0;
 #X connect 11 0 8 1;
 #X connect 12 0 8 1;
+#X connect 13 0 14 0;
