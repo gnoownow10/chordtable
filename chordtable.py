@@ -1,10 +1,16 @@
 import random
+from functools import partial
+from collections import namedtuple
 
-MAX_WEIGHT = 7
-OP_WEIGHT, OP_LIGHTEN = 1, 0
+Chordtable = namedtuple('Chordtable', [
+    'weights',
+    'ages',
+    'max_weight',
+    'steps'
+])
 
 def partials (p):
-    return [(x + p) % 12 for x in [0, 7, 4, 10, 2]]
+    return tuple((x + p) % 12 for x in [0, 7, 4, 10, 2])
 
 def windex(l):
     total, cum = sum(l), 0
@@ -14,61 +20,74 @@ def windex(l):
         if n < cum: break
     return i
 
-class Chordtable:
-    def __init__ (self):
-        self.steps = 12
-        self.weights, self.ages = [0] * self.steps, [0] * self.steps
+def clip(lo, hi, x):
+    return max(lo, min(hi, x))
 
-    def __iter__ (self):
-        return self
+def aging(weight, age):
+    if weight > 0:
+        return age + 1
+    else:
+        return 0
 
-    def weight (self, p):
-        if self.weights[p] < MAX_WEIGHT: self.weights[p] += 1
+def next_step(chordtable):
+    population = len([w for w in chordtable.weights if w > 0])
 
-    def lighten (self, p):
-        if self.weights[p] > 0: self.weights[p] -= 1
+    if population == 0:
+        return random.randint(0, chordtable.steps - 1), 1
 
-    def census (self):
-        return len([w for w in self.weights if w > 0])
+    to_vivify     = chordtable.steps - population
+    not_to_vivify = population
+    will_vivify   = windex([not_to_vivify, to_vivify * 1.2])
 
-    def next (self):
-        population = self.census()
-        if population > 0:
-            if windex([population, (self.steps - population) * 1.2]):
-                choice, op = self.nourish(windex(self.weights)), OP_WEIGHT
-            else:
-                choice, op = (self.tyrannize(windex([
-                                sum([self.weights[c] * pow(2, 4 - i)
-                                  for i, c in enumerate(partials(p))])
-                                    for p, w in enumerate(self.weights)])),
-                              OP_LIGHTEN)
-        else:
-            choice, op = random.randint(0, self.steps - 1), OP_WEIGHT
-            self.weight(choice)
+    if will_vivify:
+        return choose_beneficiary(chordtable), 1
+    else:
+        return choose_victim(chordtable), -1
 
-        self.outdate()
-        return choice, op
+def choose_beneficiary(chordtable):
+    fundamental = windex(chordtable.weights)
+    harmonics   = partials(fundamental)
 
-    def nourish (self, p):
-        allies = partials(p)
-        choice = allies[windex([pow(2, 4 - i) * (MAX_WEIGHT - self.weights[c])
-                        for i, c in enumerate(allies)])]
-        self.weight(choice)
-        return choice
+    weights = (chordtable.weights[p] for p in harmonics)
+    rooms   = (chordtable.max_weight - w for w in weights)
 
-    def tyrannize (self, tyrant):
-        subs = partials(tyrant)
-        choice = windex(
-            [(p not in subs) 
-             * (MAX_WEIGHT - self.weights[p] + 1)
-             * self.ages[p] 
-                for p, w in enumerate(self.weights)])
-        self.lighten(choice)
-        return choice
+    index = windex([pow(2, 4 - rank) * room for rank, room in enumerate(rooms)])
+    return harmonics[index]
 
-    def outdate (self):
-        for p, w in enumerate(self.weights):
-            if w > 0:
-                self.ages[p] += 1
-            else:
-                self.ages[p] = 0
+def compute_power(chordtable, pitch_class):
+    harmonics = partials(pitch_class)
+    weights   = (chordtable.weights[p] for p in harmonics)
+    return sum([w * pow(2, 4 - rank) for rank, w in enumerate(weights)])
+
+def compute_nuisance(chordtable, pitch_class):
+    weight = chordtable.weights[pitch_class]
+    age    = chordtable.ages[pitch_class]
+
+    return (chordtable.max_weight - weight + 1) * age
+
+def choose_victim(chordtable):
+    power    = partial(compute_power, chordtable)
+    nuisance = partial(compute_nuisance, chordtable)
+
+    classes     = range(0, chordtable.steps)
+    fundamental = windex([power(p) for p in classes])
+    inharmonics = tuple(p for p in classes if p not in partials(fundamental))
+
+    return inharmonics[windex([nuisance(i) for i in inharmonics])]
+
+def modify(chordtable, *edits):
+    weights = list(chordtable.weights)
+    for p, delta in edits:
+        weights[p] = clip(0, chordtable.max_weight, weights[p] + delta)
+
+    pairs = zip(chordtable.weights, chordtable.ages)
+    ages  = (aging(w, a) for w, a in pairs)
+    return chordtable._replace(weights=tuple(weights), ages=tuple(ages))
+
+def create(steps = 12, max_weight = 7):
+    return Chordtable(
+        weights=(0,) * steps,
+        ages=(0,) * steps,
+        steps=steps,
+        max_weight=max_weight
+    )

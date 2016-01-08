@@ -1,5 +1,6 @@
 import random
 import note
+from functools import reduce
 
 allowed_leap = lambda steps: 24 - steps * 3
 LEAP_TEST_RANGE = 4
