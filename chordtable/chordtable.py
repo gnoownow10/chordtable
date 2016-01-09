@@ -32,9 +32,8 @@ class Chordtable(namedtuple('Chordtable', [
 ])):
     __slots__ = ()
 
-    @staticmethod
-    def create(steps = 12, max_weight = 8):
-        return Chordtable(
+    def __new__(cls, steps = 12, max_weight = 8):
+        return super().__new__(cls, 
             weights=(0,) * steps,
             ages=(0,) * steps,
             steps=steps,
