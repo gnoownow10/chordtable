@@ -12,7 +12,7 @@ for i in range(0, 1000):
     chord = chord.modify(chord.next_step())
     print('<tr>')
     for p, w in enumerate(chord.weights):
-        color = misc.get_color(chord, p)
+        color = misc.get_color(chord.max_weight, w)
         print('<td style="background: %s">%s</td>' % (misc.format_color(*color), names[p]))
     print('</tr>')
 print('</table>')

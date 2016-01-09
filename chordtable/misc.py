@@ -1,7 +1,7 @@
 import socket
 
-def get_color(chordtable, pitch_class):
-    r = chordtable.weights[pitch_class] / chordtable.max_weight
+def get_color(max_weight, weight):
+    r = weight / max_weight
 
     red   = 255
     green = min(-1 * r * 255 * 2 + 255 * 2, 255)
