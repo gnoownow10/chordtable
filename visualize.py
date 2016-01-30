@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from chordtable.chordtable import Chordtable
 import chordtable.misc as misc
 
